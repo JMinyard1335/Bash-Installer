@@ -25,6 +25,7 @@
 # Tool to install, update and remove scripts and binaries.
 
 
+# source in lib folder -----------------------------------------------------------------
 SCRIPT_PATH="$(realpath -- "$0")"
 SCRIPT_DIR="$(dirname -- "$SCRIPT_PATH")"
 SCRIPT_NAME="$(basename -- "$0")"
@@ -44,6 +45,8 @@ fi
 source "$LIB_DIR/install.sh"
 source "$LIB_DIR/remove.sh"
 source "$LIB_DIR/update.sh"
+# ----------------------------------------------------------------------------------------
+
 
 COMMAND=""
 ARGS=()
