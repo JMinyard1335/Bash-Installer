@@ -21,6 +21,7 @@ INSTALL_GLOBAL=false
 # Set based on the INSTALL_GLOBAL flag.
 INSTALL_LOCATION=""			
 TOOL_PATH=""				# Path to the tools project.
+REPO=false
 
 _install_usage() {
     cat <<EOF
@@ -28,8 +29,9 @@ Usage:
   installer install [options] <path>
 
 Options:
-  -g, --global     Install globally
-  --help           Show this help message
+  -g, --global			Install globally
+  --repo			installs from a repo instead.
+  --help			Show this help message
 
 Behavior:
   Expects a project layout like:
@@ -45,6 +47,8 @@ Behavior:
 Examples:
   installer install ./installer
   installer install --global ./installer
+  installer install --repo "https://github.com/JMinyard1335/Bash-Installer"
+  installer install --global --repo "https://github.com/JMinyard1335/Bash-Installer"
 EOF
 }
 
@@ -75,6 +79,7 @@ _install_success() {
 _install_parse_args() {
     TOOL_PATH=""
     INSTALL_GLOBAL=false
+    REPO=false
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -84,6 +89,10 @@ _install_parse_args() {
                 ;;
             -g|--global)
                 INSTALL_GLOBAL=true
+                shift
+                ;;
+            --repo)
+                REPO=true
                 shift
                 ;;
             --)
@@ -118,7 +127,11 @@ _install_parse_args() {
     done
 
     if [[ -z "$TOOL_PATH" ]]; then
-        _install_error "Missing install path."
+        if [[ "$REPO" == true ]]; then
+            _install_error "Missing repository URL."
+        else
+            _install_error "Missing install path."
+        fi
         _install_usage
         return 1
     fi
@@ -212,6 +225,64 @@ _install_move_metadata() {
     return 0
 }
 
+# _install_deps <dependency list>
+_install_deps() {
+    echo "not implemented"
+}
+
+# install_from_dir <path> <tool>
+# installs a tool from a directory path
+install_from_dir() {
+    local path="$1"
+    local tool="$2"
+    
+    _install_move_to_bin "$path" "$tool" || return 1
+    _install_move_to_lib "$path" "$tool" || return 1
+    _install_move_metadata "$path" "$tool" || return 1
+    return 0
+}
+
+# install_from_repo <link> <tool>
+# installs a tool from a online repo
+install_from_repo() {
+    local repo_url="$1"
+    local temp_dir=""
+    local tool=""
+
+    temp_dir="$(mktemp -d)" || {
+        _install_error "Failed to create temp directory."
+        return 1
+    }
+
+    _install_log "Cloning ${MAGENTA}$repo_url${RESET} to ${MAGENTA}$temp_dir${RESET} for install..."
+    git clone "$repo_url" "$temp_dir" || {
+        _install_error "Failed to clone repository."
+        rm -rf "$temp_dir"
+        return 1
+    }
+    ls "$temp_dir"
+    ls "$temp_dir/lib"
+   
+    tool="$(toml_r "$temp_dir/tool.toml" project name)" || {
+        _install_error "Failed to read project name from cloned repo."
+        rm -rf "$temp_dir"
+        return 1
+    }
+
+    _install_success "$tool successfully cloned."
+
+    install_from_dir "$temp_dir" "$tool" || {
+        rm -rf "$temp_dir"
+        return 1
+    }
+
+    _install_log "Cleaning up the temp dir..."
+    rm -rf "$temp_dir" || return 1
+    _install_success "$temp_dir cleaned up."
+
+    return 0
+}
+
 # install_cmd
 # the front facing api of this script.
 install_cmd() {
@@ -228,19 +299,27 @@ install_cmd() {
         *) return 1 ;;
     esac
 
-    tool="$(toml_r "$TOOL_PATH/tool.toml" project name)" || return 1
-
-    _install_log "Installing $tool..."
-
     _install_get_dir "$INSTALL_GLOBAL"
-    _install_log "Installing to $INSTALL_LOCATION"
+    _install_log "Installing to ${MAGENTA}$INSTALL_LOCATION${RESET}"
 
     _install_check_dir "$INSTALL_LOCATION" || return 1
-    _install_move_to_bin "$TOOL_PATH" "$tool" || return 1
-    _install_move_to_lib "$TOOL_PATH" "$tool" || return 1
-    _install_move_metadata "$TOOL_PATH" "$tool" || return 1
 
-    _install_success "$tool successfully installed."
+    if [[ "$REPO" == true ]]; then
+        _install_log "Installing from repo ${MAGENTA}$TOOL_PATH${RESET}"
+        install_from_repo "$TOOL_PATH" || return 1
+    else
+        if [[ ! -d "$TOOL_PATH" ]]; then
+            _install_error "Install path is not a directory: $TOOL_PATH"
+            return 1
+        fi
+
+        tool="$(toml_r "$TOOL_PATH/tool.toml" project name)" || return 1
+        _install_log "Installing $tool..."
+
+        install_from_dir "$TOOL_PATH" "$tool" || return 1
+    fi
+
+    _install_success "Install complete."
     echo ""
     _install_warn 'READ THE FOLLOWING:'
     _install_warn 'If installed locally:'
