@@ -180,6 +180,7 @@ _install_move_to_bin() {
 
     # install the tool script to the bin
     # grants the necessary permissions
+    echo "PATH: $INSTALL_LOCATION"
     if [[ -f "${path}/${tool}" ]]; then
 	install -m 755 -t "${INSTALL_LOCATION}/bin" "${path}/${tool}" || return 1
 	_install_success "$tool installed successfully to bin"
@@ -196,7 +197,7 @@ _install_move_to_lib() {
     local path="$1"
     local tool="$2"
     local dest="${INSTALL_LOCATION}/lib/${tool}/"
-    
+    echo "PATH: $path"
     ## install the tools lib to the lib dir.
     if [[ -d "${path}/lib/" ]]; then
 	install -d "$dest" || return 1
