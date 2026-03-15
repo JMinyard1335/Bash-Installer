@@ -189,3 +189,5 @@ Yes this is quite the long script but toss it in a function or its own file and 
 - [ ] Implement the dependency installer.
 - [ ] Man page installs.
 - [ ] allow user to define name of project dirs in tool.toml
+- [ ] move toml functionality to its own project
+- [ ] Implement the bashlib-formatter
