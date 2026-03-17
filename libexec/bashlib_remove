@@ -1,0 +1,100 @@
+#!/usr/bin/env bash
+# Wrapper for the remove command: parse args and call internal library.
+
+# Resolve install/lib paths (matches install wrapper behavior)
+installer_tool_name="installer"
+installer_cli_remove_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+installer_tool_lib_dir=""
+
+if [[ "${installer_cli_remove_dir}" == "${HOME}/.local/libexec/${installer_tool_name}" ]]; then
+    [[ -d "${HOME}/.local/lib/${installer_tool_name}" ]] && installer_tool_lib_dir="${HOME}/.local/lib/${installer_tool_name}"
+elif [[ "${installer_cli_remove_dir}" == "/usr/libexec/${installer_tool_name}" ]]; then
+    [[ -d "/usr/lib/${installer_tool_name}" ]] && installer_tool_lib_dir="/usr/lib/${installer_tool_name}"
+else
+    [[ -d "${installer_cli_remove_dir}/../lib" ]] && installer_tool_lib_dir="${installer_cli_remove_dir}/../lib"
+fi
+
+source "${installer_tool_lib_dir}/internal/installer_format.bash"
+source "${installer_tool_lib_dir}/internal/bashlib_remove.bash"
+
+TOOL_NAME=''
+
+_remove_usage() {
+    cat <<EOF
+Usage:
+  remove <project-name>
+
+Options:
+  --help    Show this help message
+
+Examples:
+  remove cli-builder
+EOF
+}
+
+_remove_error() { installer_error "$*"; }
+_remove_warn() { installer_warn "$*"; }
+_remove_info() { installer_logln "$*"; }
+
+_remove_parse_args() {
+    TOOL_NAME=""
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --help)
+                _remove_usage
+                return 2
+                ;;
+            --)
+                shift
+                break
+                ;;
+            -*)
+                installer_error "Unknown option: $1"
+                _remove_usage
+                return 1
+                ;;
+            *)
+                if [[ -n "$TOOL_NAME" ]]; then
+                    installer_error "Too many arguments: $1"
+                    _remove_usage
+                    return 1
+                fi
+                TOOL_NAME="$1"
+                shift
+                ;;
+        esac
+    done
+
+    while [[ $# -gt 0 ]]; do
+        if [[ -n "$TOOL_NAME" ]]; then
+            installer_error "Too many arguments: $1"
+            _remove_usage
+            return 1
+        fi
+        TOOL_NAME="$1"
+        shift
+    done
+
+    if [[ -z "$TOOL_NAME" ]]; then
+        installer_error "missing project name"
+        _remove_usage
+        return 1
+    fi
+
+    return 0
+}
+
+# If this is called from cli run
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    _remove_parse_args "$@"
+    case "$?" in
+        0) ;;
+        1) exit 1 ;;
+        2) exit 0 ;;
+    esac
+
+    bashlib_remove_tool "$TOOL_NAME"
+    exit $?
+fi
+}

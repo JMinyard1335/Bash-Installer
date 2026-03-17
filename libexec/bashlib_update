@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+# Wrapper for the update command: parse args and call internal library.
+
+installer_tool_name="installer"
+installer_cli_update_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+installer_tool_lib_dir=""
+
+if [[ "${installer_cli_update_dir}" == "${HOME}/.local/libexec/${installer_tool_name}" ]]; then
+    [[ -d "${HOME}/.local/lib/${installer_tool_name}" ]] && installer_tool_lib_dir="${HOME}/.local/lib/${installer_tool_name}"
+elif [[ "${installer_cli_update_dir}" == "/usr/libexec/${installer_tool_name}" ]]; then
+    [[ -d "/usr/lib/${installer_tool_name}" ]] && installer_tool_lib_dir="/usr/lib/${installer_tool_name}"
+else
+    [[ -d "${installer_cli_update_dir}/../lib" ]] && installer_tool_lib_dir="${installer_cli_update_dir}/../lib"
+fi
+
+source "${installer_tool_lib_dir}/internal/installer_format.bash"
+source "${installer_tool_lib_dir}/internal/bashlib_update.bash"
+
+TOOL_NAME=""
+
+_update_usage() {
+    cat <<EOF
+Usage:
+  installer update [options] <tool>
+
+Options:
+  --help        Show this help message
+
+Examples:
+  installer update installer
+EOF
+}
+
+_update_parse_args() {
+    TOOL_NAME=""
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --help)
+                _update_usage
+                return 2
+                ;;
+            --)
+                shift
+                break
+                ;;
+            -*)
+                installer_error "Unknown option: $1"
+                _update_usage
+                return 1
+                ;;
+            *)
+                if [[ -n "$TOOL_NAME" ]]; then
+                    installer_error "Too many arguments: $1"
+                    _update_usage
+                    return 1
+                fi
+                TOOL_NAME="$1"
+                shift
+                ;;
+        esac
+    done
+
+    while [[ $# -gt 0 ]]; do
+        if [[ -n "$TOOL_NAME" ]]; then
+            installer_error "Too many arguments: $1"
+            _update_usage
+            return 1
+        fi
+        TOOL_NAME="$1"
+        shift
+    done
+
+    if [[ -z "$TOOL_NAME" ]]; then
+        installer_error "Missing tool name"
+        _update_usage
+        return 1
+    fi
+
+    return 0
+}
+
+update_cmd() {
+    local parse_status=0
+
+    _update_parse_args "$@"
+    parse_status=$?
+
+    case "$parse_status" in
+        0) ;;
+        1) return 1 ;;
+        2) return 0 ;;
+        *) return 1 ;;
+    esac
+
+    bashlib_update_tool "$TOOL_NAME"
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    update_cmd "$@"
+fi
