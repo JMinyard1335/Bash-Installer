@@ -19,18 +19,6 @@ Examples:
 EOF
 }
 
-_remove_error() {
-    printf '%b[Error]:%b %s\n' "$RED" "$RESET" "$*" >&2
-}
-
-_remove_warn() {
-    printf '%b[Warn]:%b %s\n' "$YELLOW" "$RESET" "$*" >&2
-}
-
-_remove_info() {
-    printf '%b[Remove]:%b %s\n' "$GREEN" "$RESET" "$*"
-}
-
 _remove_parse_args() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
