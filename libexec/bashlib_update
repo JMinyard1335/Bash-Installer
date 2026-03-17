@@ -1,18 +1,22 @@
 #!/usr/bin/env bash
-# Used to update a tool from its repo
-#
-# Determines where the tool is installed,
-# reads the tool.toml file from lib/,
-# then clones the repo to a temp dir
-# and runs install on that temp dir.
+# Wrapper for the update command: parse args and call internal library.
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/toml.sh"
-source "${SCRIPT_DIR}/installer-color.sh"
-source "${SCRIPT_DIR}/install.sh"
+installer_tool_name="installer"
+installer_cli_update_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+installer_tool_lib_dir=""
+
+if [[ "${installer_cli_update_dir}" == "${HOME}/.local/libexec/${installer_tool_name}" ]]; then
+    [[ -d "${HOME}/.local/lib/${installer_tool_name}" ]] && installer_tool_lib_dir="${HOME}/.local/lib/${installer_tool_name}"
+elif [[ "${installer_cli_update_dir}" == "/usr/libexec/${installer_tool_name}" ]]; then
+    [[ -d "/usr/lib/${installer_tool_name}" ]] && installer_tool_lib_dir="/usr/lib/${installer_tool_name}"
+else
+    [[ -d "${installer_cli_update_dir}/../lib" ]] && installer_tool_lib_dir="${installer_cli_update_dir}/../lib"
+fi
+
+source "${installer_tool_lib_dir}/internal/installer_format.bash"
+source "${installer_tool_lib_dir}/internal/bashlib_update.bash"
 
 TOOL_NAME=""
-TOOL_LOCATION=""
 
 _update_usage() {
     cat <<EOF
@@ -20,27 +24,11 @@ Usage:
   installer update [options] <tool>
 
 Options:
-  --help        Shows this help menu
+  --help        Show this help message
 
 Examples:
   installer update installer
 EOF
-}
-
-_update_error() {
-    printf "${RED}[update-Err]:${RESET} %s\n" "$*" >&2
-}
-
-_update_warn() {
-    printf "${YELLOW}[update-Warn]:${RESET} %s\n" "$*" >&2
-}
-
-_update_info() {
-    printf "${CYAN}[update]:${RESET} %s\n" "$*"
-}
-
-_update_success() {
-    printf "${GREEN}[update-Ok]:${RESET} %s\n" "$*"
 }
 
 _update_parse_args() {
@@ -57,13 +45,13 @@ _update_parse_args() {
                 break
                 ;;
             -*)
-                _update_error "Unknown option: $1"
+                installer_error "Unknown option: $1"
                 _update_usage
                 return 1
                 ;;
             *)
                 if [[ -n "$TOOL_NAME" ]]; then
-                    _update_error "Too many arguments: $1"
+                    installer_error "Too many arguments: $1"
                     _update_usage
                     return 1
                 fi
@@ -75,7 +63,7 @@ _update_parse_args() {
 
     while [[ $# -gt 0 ]]; do
         if [[ -n "$TOOL_NAME" ]]; then
-            _update_error "Too many arguments: $1"
+            installer_error "Too many arguments: $1"
             _update_usage
             return 1
         fi
@@ -84,7 +72,7 @@ _update_parse_args() {
     done
 
     if [[ -z "$TOOL_NAME" ]]; then
-        _update_error "Missing tool name"
+        installer_error "Missing tool name"
         _update_usage
         return 1
     fi
@@ -92,44 +80,8 @@ _update_parse_args() {
     return 0
 }
 
-# _update_find_tool <tool name>
-_update_find_tool() {
-    local tool="$1"
-
-    if [[ -f "$HOME/.local/bin/$tool" ]]; then
-        TOOL_LOCATION="$HOME/.local"
-        return 0
-    elif [[ -f "/usr/bin/$tool" ]]; then
-        TOOL_LOCATION="/usr"
-        return 0
-    else
-        _update_error "Tool not found: $tool"
-        return 1
-    fi
-}
-
-_update_set_install_target() {
-    case "$TOOL_LOCATION" in
-        "$HOME/.local")
-            INSTALL_GLOBAL=false
-            ;;
-        "/usr")
-            INSTALL_GLOBAL=true
-            ;;
-        *)
-            _update_error "Unknown tool location: $TOOL_LOCATION"
-            return 1
-            ;;
-    esac
-
-    _install_get_dir "$INSTALL_GLOBAL" || return 1
-    _install_check_dir "$INSTALL_LOCATION" || return 1
-    return 0
-}
-
 update_cmd() {
     local parse_status=0
-    local repo=""
 
     _update_parse_args "$@"
     parse_status=$?
@@ -141,24 +93,9 @@ update_cmd() {
         *) return 1 ;;
     esac
 
-    _update_find_tool "$TOOL_NAME" || return 1
-    _update_info "Found ${MAGENTA}$TOOL_NAME${RESET} in ${MAGENTA}$TOOL_LOCATION${RESET}"
-
-    _update_set_install_target || return 1
-    _update_info "Updating into ${MAGENTA}$INSTALL_LOCATION${RESET}"
-
-    repo="$(toml_r "$TOOL_LOCATION/lib/$TOOL_NAME/tool.toml" project repo)" || {
-        _update_error "Failed to read repo from $TOOL_LOCATION/lib/$TOOL_NAME/tool.toml"
-        return 1
-    }
-
-    [[ -n "$repo" ]] || {
-        _update_error "No repo found in tool metadata"
-        return 1
-    }
-
-    install_from_repo "$repo" || return 1
-
-    _update_success "$TOOL_NAME updated successfully."
-    return 0
+    bashlib_update_tool "$TOOL_NAME"
 }
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    update_cmd "$@"
+fi

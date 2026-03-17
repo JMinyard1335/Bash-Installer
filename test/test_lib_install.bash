@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
 # Used to test installer library functions
 
-source ./test_asserts.bash
-source ../lib/internal/bashlib_install.bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+source "$SCRIPT_DIR/test_asserts.bash"
+source "$SCRIPT_DIR/../lib/internal/bashlib_install.bash"
 
 # -----------------------------------------------------------------------------
 # Test sandbox
@@ -80,7 +82,7 @@ test_move_to_lib() {
     cleanup_test_env
     setup_test_env
 
-    _bashlib_move_to_lib "$SRC_ROOT" "$HOME/.local" "mytool" 0
+    _bashlib_move_to_lib "$SRC_ROOT" "$HOME/.local" "mytool" 0 > /dev/null 2>&1
     status="$?"
 
     assert_true "$status" "move_to_lib should succeed, got $status"
@@ -98,7 +100,7 @@ test_move_to_libexec() {
     cleanup_test_env
     setup_test_env
 
-    _bashlib_move_to_libexec "$SRC_ROOT" "$HOME/.local" "mytool" 0
+    _bashlib_move_to_libexec "$SRC_ROOT" "$HOME/.local" "mytool" 0 > /dev/null 2>&1
     status="$?"
 
     assert_true "$status" "move_to_libexec should succeed, got $status"
@@ -116,7 +118,7 @@ test_move_to_bin() {
     cleanup_test_env
     setup_test_env
 
-    _bashlib_move_to_bin "$SRC_ROOT" "$HOME/.local" "mytool" 0
+    _bashlib_move_to_bin "$SRC_ROOT" "$HOME/.local" "mytool" 0 > /dev/null 2>&1
     status="$?"
 
     assert_true "$status" "move_to_bin should succeed, got $status"
@@ -134,7 +136,7 @@ test_install_from_source() {
     cleanup_test_env
     setup_test_env
 
-    bashlib_install_from_source "$SRC_ROOT" "$HOME/.local" 0
+    bashlib_install_from_source "$SRC_ROOT" "$HOME/.local" 0 > /dev/null 2>&1
     status="$?"
 
     assert_true "$status" "install_from_source should succeed, got $status"
@@ -158,7 +160,7 @@ test_install_from_repo() {
 
     bad_repo="$TEST_ROOT/does_not_exist"
 
-    bashlib_install_from_repo "$bad_repo" "$HOME/.local" 0
+    bashlib_install_from_repo "$bad_repo" "$HOME/.local" 0 > /dev/null 2>&1
     status="$?"
 
     assert_false "$status" "install_from_repo should fail on invalid repo path"
@@ -167,16 +169,19 @@ test_install_from_repo() {
     echo -e "\e[1;32m[TEST]:\e[0m install_from_repo passed"
 }
 
-# -----------------------------------------------------------------------------
-# Runner
-# -----------------------------------------------------------------------------
+test_lib_install_main() {
+    echo -e "\e[1;36m[TEST]:\e[0m Running installer tests..."
 
-echo -e "\e[1;36m[TEST]:\e[0m Running installer tests..."
+    test_move_to_lib
+    test_move_to_libexec
+    test_move_to_bin
+    test_install_from_source
+    test_install_from_repo
 
-test_move_to_lib
-test_move_to_libexec
-test_move_to_bin
-test_install_from_source
-test_install_from_repo
+    echo -e "\e[1;32m[TEST]:\e[0m All installer tests passed!!!"
+}
 
-echo -e "\e[1;32m[TEST]:\e[0m All installer tests passed!!!"
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+    test_lib_install_main "$@"
+fi
+
