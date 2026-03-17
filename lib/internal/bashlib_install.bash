@@ -6,6 +6,14 @@ if [[ -v installer_install_sourced ]]; then
     return 0
 fi
 installer_install_sourced=1
+
+BASHLIB_INSTALL_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "${BASHLIB_INSTALL_DIR}/../toml/toml_read.bash"
+source "${BASHLIB_INSTALL_DIR}/installer_err.bash"
+# source "${BASHLIB_INSTALL_DIR}/installer_helpers.bash"
+source "${BASHLIB_INSTALL_DIR}/installer_format.bash"
+
+
 ## ---------------------------------------------------------------------------------------
 
 ## Install state -------------------------------------------------------------------------
@@ -29,7 +37,7 @@ bashlib_install_from_source() {
     local source_dir="" install_dir="" debug="" tool_name="" status=0
 
     if [[ "$#" -lt 2 || "$#" -gt 3 ]]; then
-        echo "bashlib_install_from_source: Invalid argument count." >&2
+        installer_error "Invalid number of arguments given"
         return 1
     fi
 
@@ -38,26 +46,30 @@ bashlib_install_from_source() {
     debug="${3:-0}"
 
     if [[ ! -d "$source_dir" ]]; then
-        echo "bashlib_install_from_source: Source directory not found: $source_dir" >&2
+        installer_error "bashlib_install_from_source: Source directory not found - $source_dir"
         return 1
     fi
 
     if [[ ! -f "${source_dir}/tool.toml" ]]; then
-        echo "bashlib_install_from_source: Missing tool.toml in: $source_dir" >&2
+        installer_error "bashlib_install_from_source: Missing tool.toml in: $source_dir"
         return 1
     fi
 
     _bashlib_check_install_path "$install_dir" || return 1
 
-    tool_name="$(_bashlib_parse_project_tool "${source_dir}/tool.toml")"
+    if ! tool_name="$(toml_read_key "${source_dir}/tool.toml" "project" "tool")"; then
+        installer_error "Failed to determine tool name from ${source_dir}/tool.toml"
+        return 1
+    fi
+
     if [[ -z "$tool_name" ]]; then
-        echo "bashlib_install_from_source: Failed to determine tool name from ${source_dir}/tool.toml" >&2
+        installer_error "Failed to determine tool name from ${source_dir}/tool.toml"
         return 1
     fi
 
     # If this tool is already in the current dependency chain, do not recurse into it again.
     if [[ -n "${_bashlib_install_seen_tools[$tool_name]}" ]]; then
-        [[ "$debug" -ge 1 ]] && echo "[install]: Tool '${tool_name}' already being processed, skipping to avoid cycle"
+        [[ "$debug" -ge 1 ]] && installer_warn "Tool '${tool_name}' already being processed, skipping to avoid cycle"
         return 0
     fi
 
@@ -65,7 +77,7 @@ bashlib_install_from_source() {
 
     bashlib_install_dependencies "$source_dir" "$install_dir" "$debug" || return 1
 
-    [[ "$debug" -ge 1 ]] && echo "[install]: Installing ${tool_name}: $source_dir -> $install_dir"
+    [[ "$debug" -ge 1 ]] && installer_logln "Installing ${tool_name}: $source_dir -> $install_dir"
 
     _bashlib_move_to_bin "$source_dir" "$install_dir" "$tool_name" "$debug" || status=1
     _bashlib_move_to_lib "$source_dir" "$install_dir" "$tool_name" "$debug" || status=1
@@ -190,7 +202,7 @@ bashlib_install_dependencies() {
         fi
 
         bashlib_install_from_repo "$dep_url" "$install_dir" "$debug" || return 1
-    done < <(_bashlib_parse_dependencies "$tool_toml")
+    done < <(toml_read_table "$tool_toml" "dependencies" 2>/dev/null || true)
 
     if [[ "$found_any" -eq 0 ]]; then
         [[ "$debug" -ge 2 ]] && echo "[debug]: No dependencies found."
@@ -341,117 +353,5 @@ _bashlib_move_to_man() {
     echo -e "\e[1;33m[Warn]:\e[0m Not implemented man pages will not be installed with the project."
     echo "     please see the projects github page for more info and updates."
     return 0
-}
-
-# _bashlib_parse_dependencies <tool.toml>
-#
-# Reads the [dependencies] table from tool.toml and prints:
-#   <name><TAB><url>
-# one per line.
-#
-# Only supports simple TOML entries of the form:
-#   key = "value"
-_bashlib_parse_dependencies() {
-    local toml_file=""
-
-    if [[ "$#" -ne 1 ]]; then
-        echo "_bashlib_parse_dependencies: Invalid argument count." >&2
-        return 1
-    fi
-
-    toml_file="$1"
-
-    if [[ ! -f "$toml_file" ]]; then
-        echo "_bashlib_parse_dependencies: Missing file: $toml_file" >&2
-        return 1
-    fi
-
-    awk '
-        BEGIN { in_deps = 0 }
-
-        /^[[:space:]]*#/ { next }
-        /^[[:space:]]*$/ { next }
-
-        /^[[:space:]]*\[/ {
-            if ($0 ~ /^[[:space:]]*\[dependencies\][[:space:]]*$/) {
-                in_deps = 1
-            } else {
-                in_deps = 0
-            }
-            next
-        }
-
-        in_deps {
-            line = $0
-            sub(/^[[:space:]]+/, "", line)
-            sub(/[[:space:]]+$/, "", line)
-
-            split(line, parts, "=")
-            if (length(parts) >= 2) {
-                key = parts[1]
-                val = substr(line, index(line, "=") + 1)
-
-                sub(/[[:space:]]+$/, "", key)
-                sub(/^[[:space:]]+/, "", key)
-
-                sub(/^[[:space:]]+/, "", val)
-                sub(/[[:space:]]+$/, "", val)
-
-                if (val ~ /^".*"$/) {
-                    sub(/^"/, "", val)
-                    sub(/"$/, "", val)
-                    printf "%s\t%s\n", key, val
-                }
-            }
-        }
-    ' "$toml_file"
-}
-
-# _bashlib_parse_project_tool <tool.toml>
-#
-# Reads [project] tool = "name" from tool.toml and prints the tool name.
-_bashlib_parse_project_tool() {
-    local toml_file=""
-
-    if [[ "$#" -ne 1 ]]; then
-        echo "_bashlib_parse_project_tool: Invalid argument count." >&2
-        return 1
-    fi
-
-    toml_file="$1"
-
-    if [[ ! -f "$toml_file" ]]; then
-        echo "_bashlib_parse_project_tool: Missing file: $toml_file" >&2
-        return 1
-    fi
-
-    awk '
-        BEGIN { in_project = 0 }
-
-        /^[[:space:]]*#/ { next }
-        /^[[:space:]]*$/ { next }
-
-        /^[[:space:]]*\[/ {
-            if ($0 ~ /^[[:space:]]*\[project\][[:space:]]*$/) {
-                in_project = 1
-            } else {
-                in_project = 0
-            }
-            next
-        }
-
-        in_project {
-            line = $0
-            sub(/^[[:space:]]+/, "", line)
-            sub(/[[:space:]]+$/, "", line)
-
-            if (line ~ /^tool[[:space:]]*=[[:space:]]*".*"$/) {
-                sub(/^tool[[:space:]]*=[[:space:]]*"/, "", line)
-                sub(/"$/, "", line)
-                print line
-                exit
-            }
-        }
-    ' "$toml_file"
 }
 ## END HELPER FUNCTIONS ------------------------------------------------------------------

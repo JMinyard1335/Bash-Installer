@@ -45,9 +45,11 @@ else
 fi
 
 
-source "$LIB_DIR/bashlib_install.bash"
-source "$LIB_DIR/bashlib_remove.bash"
-source "$LIB_DIR/bashlib_update.bash"
+source "$LIB_DIR/internal/bashlib_install.bash"
+source "$LIB_DIR/internal/bashlib_remove.bash"
+source "$LIB_DIR/internal/bashlib_update.bash"
+source "$LIB_DIR/internal/installer_format.bash"
+
 # ----------------------------------------------------------------------------------------
 
 
@@ -102,9 +104,9 @@ _main_parse_args() {
 
 _main_run_command() {
     case "$COMMAND" in
-        install) install_cmd "${ARGS[@]}" ;;
-        remove)  remove_cmd "${ARGS[@]}" ;;
-        update)  update_cmd "${ARGS[@]}" ;;
+        install) "${LIBEXEC_DIR}/bashlib_install" "${ARGS[@]}" ;;
+        remove)  "${LIBEXEC_DIR}/bashlib_remove" "${ARGS[@]}" ;;
+        update)  "${LIBEXEC_DIR}/bashlib_update" "${ARGS[@]}" ;;
         help)    _main_usage ;;
         *)
             printf '[Error]: no dispatcher for command: %s\n' "$COMMAND" >&2

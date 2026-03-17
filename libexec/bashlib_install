@@ -33,8 +33,9 @@ else
     [[ -d "${installer_cli_install_dir}/../lib" ]] && installer_tool_lib_dir="${installer_cli_install_dir}/../lib"
 fi
 
-source "${installer_tool_lib_dir}/bashlib_install.bash"
-## End of  SOURCE GUARD
+source "${installer_tool_lib_dir}/internal/installer_format.bash"
+source "${installer_tool_lib_dir}/internal/bashlib_install.bash"
+## End of SOURCE PATH SECTION
 
 
 
@@ -47,7 +48,7 @@ TOOL_PATH=""				# Path to the tools project.
 REPO=false
 
 _install_usage() {
- a   cat <<EOF
+    cat <<EOF
 Usage:
   installer install [options] <path>
 
@@ -77,20 +78,19 @@ EOF
 
 ## Logging functions ------------------------------------------------------------------------
 _install_log() {
-    printf "${CYAN}[install]:${RESET} %s\n" "$*"
+    installer_logln "$*"
 }
 
 _install_error() {
-    printf "${RED}[install-Err]:${RESET} %s\n" "$*" >&2
+    installer_error "$*"
 }
 
-
 _install_warn() {
-    printf "${YELLOW}[install-Warn]:${RESET} %s\n" "$*" >&2
+    installer_warn "$*"
 }
 
 _install_success() {
-    printf "${GREEN}[install-Ok]:${RESET} %s\n" "$*"
+    installer_ok "$*"
 }
 
 ## ------------------------------------------------------------------------------------------
@@ -168,9 +168,9 @@ _install_parse_args() {
 _install_get_dir() {
     local global="$1"
     if [[ "$global" == true ]]; then
-	INSTALL_LOCATION="/usr"
+        INSTALL_LOCATION="/usr"
     else
-	INSTALL_LOCATION="$HOME/.local"
+        INSTALL_LOCATION="$HOME/.local"
     fi
 }
 
@@ -192,29 +192,47 @@ install_cmd() {
     esac
 
     _install_get_dir "$INSTALL_GLOBAL"
-    _install_log "Installing to ${MAGENTA}$INSTALL_LOCATION${RESET}"
-
-    _install_check_dir "$INSTALL_LOCATION" || return 1
+    installer_log "Installing to "
+    installer_path "$INSTALL_LOCATION"
+    printf "\n"
 
     if [[ "$REPO" == true ]]; then
-        _install_log "Installing from repo ${MAGENTA}$TOOL_PATH${RESET}"
-        bashlib_install_from repo "$TOOL_PATH" "$INSTALL_LOCATION" 0 || return 1
+        installer_log "Installing from repo "
+        installer_path "$TOOL_PATH"
+        printf "\n"
+        bashlib_install_from_repo "$TOOL_PATH" "$INSTALL_LOCATION" 0 || return 1
     else
         if [[ ! -d "$TOOL_PATH" ]]; then
             _install_error "Install path is not a directory: $TOOL_PATH"
             return 1
         fi
-	
-        _install_log "Installing $tool..."
+
+        tool="$(toml_read_key "${TOOL_PATH}/tool.toml" "project" "tool" 2>/dev/null || true)"
+        [[ -z "$tool" ]] && tool="$TOOL_PATH"
+
+        installer_log "Installing "
+        installer_path "$tool"
+        printf "...\n"
         bashlib_install_from_source "$TOOL_PATH" "$INSTALL_LOCATION" 0 || return 1
     fi
 
     _install_success "Install complete."
-    echo ""
-    _install_warn 'READ THE FOLLOWING:'
-    _install_warn 'If installed locally:'
-    _install_warn '  add '"${MAGENTA}"'$HOME/.local/bin'"${RESET}"' to your PATH'
-    echo ""
-    _install_log 'add '"${MAGENTA}"'export PATH="$PATH:$HOME/.local/bin"'"${RESET}"' to your .bashrc file.'
-    _install_log '.bashrc can be found at: '"${MAGENTA}"'~/.bashrc'"${RESET}"
+    printf "\n"
+    _install_warn "READ THE FOLLOWING:"
+    _install_warn "If installed locally:"
+    installer_warn "  add "
+    installer_path '$HOME/.local/bin'
+    printf " to your PATH\n"
+    printf "\n"
+    installer_log 'add '
+    installer_path 'export PATH="$PATH:$HOME/.local/bin"'
+    printf " to your .bashrc file.\n"
+    installer_log '.bashrc can be found at: '
+    installer_path '~/.bashrc'
+    printf "\n"
 }
+
+# If this is called from cli run
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    install_cmd "$@"
+fi

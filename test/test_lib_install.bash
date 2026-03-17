@@ -2,7 +2,7 @@
 # Used to test installer library functions
 
 source ./test_asserts.bash
-source ../lib/bashlib_install.bash
+source ../lib/internal/bashlib_install.bash
 
 # -----------------------------------------------------------------------------
 # Test sandbox
