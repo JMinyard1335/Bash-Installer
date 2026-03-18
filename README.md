@@ -221,6 +221,40 @@ bashlib_update_tool <tool-name>
 bashlib_remove_tool <tool-name>
 ```
 
+## Contributing
+
+If you want to contribute feel free to report bugs or other issues you find. For security related concerns please contact me through email
+so I can fix the issue and release a patch. If you feel so generous and want to add new features or fix bugs yourself please feel free to 
+make a pull request. please keep to the current coding style where you can this includes file convention. 
+
+- scripts that you run have no extension
+- scripts you source are `*.bash`
+
+we could be `.sh` but since alot of bash is used lets just call them `.bash`
+code you write for the libraries should be tested and have test place in the `test/`
+these test should make sure that
+
+- input is validated
+- all error handling works
+- proper execution of the heppy path
+
+for certian things like testing cloning that seems a bit much as long as other test are in place its good. Simply a way to test future changes
+against any defined behavors.
+
+## Testing
+
+To run the test for the project simply
+```bash
+cd <project-dir>/test
+./test_all.bash
+```
+
+this is a fail first testing suite. If any test goes wrong along the whole way it errors so you can fix the issue before runnign again.
+This is just my prefered way to test scripts like this. code a little, test a little, fix the error and move on. When writting test if you
+are a contributer there is a file `test_asserts.bash` which will give you access to a lot of simple wrappers for test that will print a message
+on error and quit. Stick to useing these even if you use them in a wrapper you make. If you find that they are not enough consider adding what you
+need to the `test_asserts.bash` file. Just make sure you follow the naming convention and the file exits on failure and returns 0 on success.
+
 ## TODO
 - [ ] Implement the dependency installer.
 - [ ] Man page installs.
