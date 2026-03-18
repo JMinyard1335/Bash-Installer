@@ -1,8 +1,8 @@
 # Bash Installer V2
 
 A collection of scripts to help you manage installing, updating, and removing custom bash scripts
-from your Linux system. Newly rewritten for easier use, this is a personal project and
-is probably not suited for secure development environments. The installer can add tools to one of
+from your Linux system. It was newly rewritten for easier use. This is a personal project and is
+probably not suited for secure development environments. The installer can add tools to one of
 two paths:
 
 ```bash
@@ -17,7 +17,7 @@ $HOME/.local/lib
 $HOME/.local/libexec
 ```
 
-Every tool that uses this installer must include a `tool.toml` file. I know, I know another
+Every tool that uses this installer must include a `tool.toml` file. I know, I know, another
 configuration file, but it's a simple way to handle metadata. I chose TOML because
 it is easy to read and understand. An example file would be:
 
@@ -31,7 +31,7 @@ other-project="path/to/other-project/repo"
 
 ```
 
-you can add additional metadata if you want but it will not be used by the installer currently.
+You can add additional metadata if you want, but it is not currently used by the installer.
 
 All dependencies must also have a `tool.toml` file, as that is how this tool works. When
 downloading dependencies, they will be installed with the
@@ -41,6 +41,7 @@ downloading dependencies, they will be installed with the
 
 The following is a list of commands and some examples of usage. The installer itself is simply
 a dispatcher similar to other tools like git. Here's how to get started:
+
 ```bash
 installer help
 installer install --help
@@ -50,23 +51,26 @@ installer update --help
 
 ### Install
 
-Used to install a project to a path either locally or globally. To use it on your own project, you must
+Used to install a project to a path, either locally or globally. To use it on your own project, you must
 lay out the project as follows:
+
 ```
 project/
 	project		# script or executable
 	tool.toml	# metadata file
 	lib/		# place for additional files and libraries
 	libexec/	# place for additional subcommands
-	
+
 ```
 
 Usage:
+
 ```bash
 installer install [opts] <path-to-tool>
 ```
 
 Examples:
+
 ```bash
 installer install --help                        # print help info
 installer install $HOME/Projects/my-project     # local install
@@ -76,12 +80,15 @@ installer install --global ./Myproject          # global install
 ### Remove
 
 Used to remove the given tool from the path.
+
 Usage:
+
 ```bash
 installer remove [opts] <tool name>
 ```
 
 Examples:
+
 ```bash
 installer remove --help
 installer remove my-tool
@@ -94,11 +101,13 @@ from the upstream tool. It will clone the tool into a temporary directory and th
 installer on it.
 
 Usage:
+
 ```bash
 installer update [opts] <tool name>
 ```
 
 Examples:
+
 ```bash
 installer update installer
 ```
@@ -107,21 +116,28 @@ installer update installer
 
 To install this project, we will use the project itself. Start by cloning the repo with the
 following command:
+
 ```bash
 git clone https://github.com/JMinyard1335/Bash-Installer.git installer
 ```
+
 Then move into the new installer directory and grant the installer the correct permissions:
+
 ```bash
 cd installer
 chmod +x installer
 ```
+
 Finally, install it with itself:
+
 ```bash
 ./installer install .
 ```
+
 Use the `--global` flag if you want to install it globally on the system (this requires root).
 
-All Commands:
+All commands:
+
 ```bash
 git clone https://github.com/JMinyard1335/Bash-Installer.git installer
 cd installer
@@ -131,11 +147,14 @@ installer install .
 
 ## Using the installer in other projects
 
-When creating a tool script I usually end up with an API along the lines of the following.
+When creating a tool script, I usually end up with an API along the lines of the following:
+
 ```bash
 <tool> <function> [opts] <args>
 ```
-so it makes sense to allow the tool to do something along the lines of 
+
+So it makes sense to allow the tool to do something like:
+
 ```bash
 <tool> install
 <tool> update
@@ -144,17 +163,17 @@ so it makes sense to allow the tool to do something along the lines of
 
 ### Installing the installer from your script
 
-You can install the installer locally without much trouble most of the time. 
-to this end add the following code to some where in your script when `tool install` is called.
+You can install the installer locally without much trouble most of the time.
+To that end, add the following code somewhere in your script when `tool install` is called.
 
 ```bash
 # if the tool is not installed globally or locally
 local which_installer=$(which installer)
-if [[ -z "$which_installer ]]; then
+if [[ -z "$which_installer" ]]; then
     printf "installer needed for project install now (y/N): "
     read -r answer
 
-	# if the answer is not yes exit/.
+	# if the answer is not yes, exit.
     if [[ ! "$answer" =~ ^([yY][eE][sS]|[yY])$ ]]; then
         echo "installer not installed. exiting."
         exit 1
@@ -172,9 +191,9 @@ if [[ -z "$which_installer ]]; then
 		error "Failed to clone installer repository"
 		rm -rf -- "$temp_dir"
 		exit 1
-	}	
+	}
 
-	# attempt to install installer.
+	# attempt to install installer
 	"$temp_dir/installer" install "$temp_dir" || {
 		error "Failed to install installer"
 		rm -rf -- "$temp_dir"
@@ -184,23 +203,24 @@ if [[ -z "$which_installer ]]; then
 	# clean up the temp dir
 	rm -rf -- "$temp_dir"
 
-	# make sure install worked.
+	# make sure install worked
 	which_installer="$(command -v installer)"
 	[[ -z "$which_installer" ]] && {
 		error "Installer still not found after installation"
-		 exit 1
+		exit 1
 	}
 fi
 ```
-Yes this is quite the long script but toss it in a function or its own file and source it easy. The above code 
-simply tells the user the installer is required and ask if they wish to install it. If they answer no the program will exit
-if not the installer will be installed and you are good to go.
+
+Yes, this is quite the long script, but toss it in a function or its own file and source it. Easy.
+The code above simply tells the user the installer is required and asks if they want to install it.
+If they answer no, the program exits. If not, the installer is installed and you are good to go.
 
 ### Sourcing the Installer Lib
 
-If the installer is installed you can easily source it with the following:
+If the installer is installed, you can easily source it with the following:
 
-``` bash
+```bash
 if [[ -f "${HOME}/.local/lib/installer/bashlib_installer.bash" ]]; then
     source "${HOME}/.local/lib/installer/bashlib_installer.bash"
 elif [[ -f "/usr/local/lib/installer/bashlib_installer.bash" ]]; then
@@ -211,9 +231,9 @@ else
 fi
 ```
 
-This will give you access to the underlying API used by the CLI tool
+This will give you access to the underlying API used by the CLI tool:
 
-``` bash
+```bash
 bashlib_install_dependencies <path-to-source-dir> <install-path> <debug-level>
 bashlib_install_from_repo <url-to-repo> <install-path> <debug-level>
 bashlib_install_from_source <path-to-source-dir> <install-path> <debug-level>
@@ -223,41 +243,38 @@ bashlib_remove_tool <tool-name>
 
 ## Contributing
 
-If you want to contribute feel free to report bugs or other issues you find. For security related concerns please contact me through email
-so I can fix the issue and release a patch. If you feel so generous and want to add new features or fix bugs yourself please feel free to 
-make a pull request. please keep to the current coding style where you can this includes file convention. 
+If you want to contribute, feel free to report bugs or other issues you find. For security-related concerns,
+please contact me through email so I can fix the issue and release a patch. If you feel generous and want to
+add new features or fix bugs yourself, feel free to make a pull request. Please keep to the current coding
+style where you can. This includes file conventions.
 
 - scripts that you run have no extension
 - scripts you source are `*.bash`
 
-we could be `.sh` but since alot of bash is used lets just call them `.bash`
-code you write for the libraries should be tested and have test place in the `test/`
-these test should make sure that
+We could use `.sh`, but since a lot of bash is used, let's just call them `.bash`.
+Code you write for the libraries should be tested and have tests in `test/`.
+These tests should make sure that:
 
 - input is validated
 - all error handling works
-- proper execution of the heppy path
+- proper execution of the happy path
 
-for certian things like testing cloning that seems a bit much as long as other test are in place its good. Simply a way to test future changes
-against any defined behavors.
+For certain things like testing cloning, that seems a bit much. As long as other tests are in place, it is good.
+This is simply a way to test future changes against defined behaviors.
 
 ## Testing
 
-To run the test for the project simply
+To run the tests for the project, simply:
+
 ```bash
 cd <project-dir>/test
 ./test_all.bash
 ```
 
-this is a fail first testing suite. If any test goes wrong along the whole way it errors so you can fix the issue before runnign again.
-This is just my prefered way to test scripts like this. code a little, test a little, fix the error and move on. When writting test if you
-are a contributer there is a file `test_asserts.bash` which will give you access to a lot of simple wrappers for test that will print a message
-on error and quit. Stick to useing these even if you use them in a wrapper you make. If you find that they are not enough consider adding what you
-need to the `test_asserts.bash` file. Just make sure you follow the naming convention and the file exits on failure and returns 0 on success.
+This is a fail-first testing suite. If any test goes wrong along the way, it errors so you can fix the issue before running again.
+This is just my preferred way to test scripts like this. Code a little, test a little, fix the error, and move on.
+When writing tests, if you are a contributor, there is a file `test_asserts.bash` which gives you access to a lot
+of simple wrappers for tests that print a message on error and quit. Stick to using these, even if you wrap them.
+If you find they are not enough, consider adding what you need to `test_asserts.bash`. Just make sure you follow
+the naming convention and that the file exits on failure and returns 0 on success.
 
-## TODO
-- [ ] Implement the dependency installer.
-- [ ] Man page installs.
-- [ ] allow user to define name of project dirs in tool.toml
-- [ ] move toml functionality to its own project
-- [ ] Implement the bashlib-formatter
