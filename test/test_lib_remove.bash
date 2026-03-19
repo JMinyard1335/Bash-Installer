@@ -120,12 +120,33 @@ test_remove_local_invalid() {
 	echo -e "\e[1;32m[TEST]:\e[0m remove_local_invalid passed"
 }
 
+test_remove_failure_propagates() {
+    echo "Testing remove propagates deletion failures..."
+
+    cleanup_test_env
+    setup_test_env
+
+    export HOME="$TEST_ROOT"
+
+    (
+        rm() { return 1; }
+        printf "y\ny\ny\n" | bashlib_remove_tool "$TOOL_NAME" > /dev/null 2>&1
+    )
+    local status=$?
+
+    assert_false "$status" "remove_tool should fail when rm fails"
+
+    cleanup_test_env
+    echo -e "\e[1;32m[TEST]:\e[0m remove_failure_propagates passed"
+}
+
 test_lib_remove_main() {
 	echo -e "\e[1;36m[TEST]:\e[0m Running remove tests..."
 
 	test_remove_invalid_input
 	test_remove_local_yes
 	test_remove_local_no
+	test_remove_failure_propagates
 	test_remove_local_invalid
 
 	echo -e "\e[1;32m[TEST]:\e[0m All remove tests passed!!!"

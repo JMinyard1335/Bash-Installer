@@ -22,35 +22,44 @@ _confirm_remove() {
     case "$reply" in
         y|Y|yes|YES)
             if [[ "$kind" == "directory" ]]; then
-                rm -r -- "$target" && printf "removed %s\n" "$target"
+                rm -r -- "$target" || return 1
             else
-                rm -f -- "$target" && printf "removed %s\n" "$target"
+                rm -f -- "$target" || return 1
             fi
+            printf "removed %s\n" "$target"
+            return 0
             ;;
         *)
             printf "skipped %s\n" "$target"
+            return 0
             ;;
     esac
 }
 
 _remove_local() {
+    local rc=0
     local local_bin="$HOME/.local/bin/$TOOL_NAME"
     local local_lib="$HOME/.local/lib/$TOOL_NAME"
     local local_exec="$HOME/.local/libexec/$TOOL_NAME"
 
-    [[ -f "$local_bin" || -L "$local_bin" ]] && _confirm_remove "$local_bin" "file"
-    [[ -d "$local_lib" ]] && _confirm_remove "$local_lib" "directory"
-    [[ -d "$local_exec" ]] && _confirm_remove "$local_exec" "directory"
+    [[ -f "$local_bin" || -L "$local_bin" ]] && { _confirm_remove "$local_bin" "file" || rc=1; }
+    [[ -d "$local_lib" ]] && { _confirm_remove "$local_lib" "directory" || rc=1; }
+    [[ -d "$local_exec" ]] && { _confirm_remove "$local_exec" "directory" || rc=1; }
+
+    return "$rc"
 }
 
 _remove_global() {
+    local rc=0
     local global_bin="/usr/local/bin/$TOOL_NAME"
     local global_lib="/usr/local/lib/$TOOL_NAME"
     local global_exec="/usr/local/libexec/$TOOL_NAME"
 
-    [[ -f "$global_bin" || -L "$global_bin" ]] && _confirm_remove "$global_bin" "file"
-    [[ -d "$global_lib" ]] && _confirm_remove "$global_lib" "directory"
-    [[ -d "$global_exec" ]] && _confirm_remove "$global_exec" "directory"
+    [[ -f "$global_bin" || -L "$global_bin" ]] && { _confirm_remove "$global_bin" "file" || rc=1; }
+    [[ -d "$global_lib" ]] && { _confirm_remove "$global_lib" "directory" || rc=1; }
+    [[ -d "$global_exec" ]] && { _confirm_remove "$global_exec" "directory" || rc=1; }
+
+    return "$rc"
 }
 
 # bashlib_remove_tool <tool name>
@@ -59,6 +68,7 @@ _remove_global() {
 # logging setup. Returns 0 on success.
 bashlib_remove_tool() {
     local tool_name="$1"
+    local rc=0
 
     if [[ -z "$tool_name" ]]; then
         installer_error "missing project name"
@@ -71,9 +81,14 @@ bashlib_remove_tool() {
     local TOOL_NAME="$tool_name"
 
     # call helpers (they reference TOOL_NAME variable)
-    _remove_local
-    _remove_global
+    _remove_local || rc=1
+    _remove_global || rc=1
 
-    installer_logln "Remove finished."
-    return 0
+    if [ "$rc" -eq 0 ]; then
+        installer_logln "Remove finished."
+        return 0
+    else
+        installer_error "Failed to remove $tool_name"
+        return 1
+    fi
 }

@@ -80,6 +80,7 @@ _update_parse_args() {
     return 0
 }
 
+
 update_cmd() {
     local parse_status=0
 

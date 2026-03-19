@@ -8,8 +8,8 @@
 #   ~/.local/lib
 #
 # Global installs go to:
-#   /usr/bin
-#   /usr/lib
+#   /usr/local/bin
+#   /usr/local/lib
 
 ## SOURCE GUARD bashlib_install ----------------------------------------------------------
 if [[ -v installer_cli_install_sourced ]]; then
@@ -25,14 +25,23 @@ installer_cli_install_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 installer_tool_lib_dir=""
 
 # Resolve install/dev paths
-if [[ "${installer_cli_install_dir}" == "${HOME}/.local/libexec/${installer_tool_name}" ]]; then
-    [[ -d "${HOME}/.local/lib/${installer_tool_name}" ]] && installer_tool_lib_dir="${HOME}/.local/lib/${installer_tool_name}"
-elif [[ "${installer_cli_install_dir}" == "/usr/libexec/${installer_tool_name}" ]]; then
-    [[ -d "/usr/lib/${installer_tool_name}" ]] && installer_tool_lib_dir="/usr/lib/${installer_tool_name}"
-else
-    [[ -d "${installer_cli_install_dir}/../lib" ]] && installer_tool_lib_dir="${installer_cli_install_dir}/../lib"
-fi
+_installer_resolve_lib_dir() {
+    local cli_dir="$1"
+    local tool_name="$2"
+    local resolved_dir=""
+    
+    if [[ "${cli_dir}" == "${HOME}/.local/libexec/${tool_name}" ]]; then
+        resolved_dir="${HOME}/.local/lib/${tool_name}"
+    elif [[ "${cli_dir}" == "/usr/local/libexec/${tool_name}" ]]; then
+        resolved_dir="/usr/local/lib/${tool_name}"
+    else
+        resolved_dir="${cli_dir}/../lib"
+    fi
+    
+    printf "%s\n" "$resolved_dir"
+}
 
+installer_tool_lib_dir="$(_installer_resolve_lib_dir "$installer_cli_install_dir" "$installer_tool_name")"
 source "${installer_tool_lib_dir}/internal/installer_format.bash"
 source "${installer_tool_lib_dir}/internal/bashlib_install.bash"
 ## End of SOURCE PATH SECTION
@@ -226,7 +235,7 @@ install_cmd() {
     printf "\n"
     installer_log 'add '
     installer_path 'export PATH="$PATH:$HOME/.local/bin"'
-    printf " to your .bashrc file.\n"
+    printf "  to your .bashrc file.\n"
     installer_log '.bashrc can be found at: '
     installer_path '~/.bashrc'
     printf "\n"

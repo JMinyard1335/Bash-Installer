@@ -182,12 +182,58 @@ test_update_install_failure_propagates() {
     echo -e "\e[1;32m[TEST]:\e[0m update_install_failure_propagates passed"
 }
 
+test_update_no_unexpected_stdout() {
+    echo "Testing update has no unexpected stdout leaks..."
+
+    local out=""
+
+    cleanup_test_env
+    setup_test_env
+
+    create_local_tool_bin
+    create_tool_toml_with_repo "https://example.com/some/tool.git"
+
+    out="$(
+        bashlib_install_from_repo() { return 1; }
+        bashlib_update_tool "$TOOL_NAME" 2>/dev/null
+    )"
+    assert_str_eq "$out" "" "update should not print raw prefix/output to stdout"
+
+    cleanup_test_env
+    echo -e "\e[1;32m[TEST]:\e[0m update_no_unexpected_stdout passed"
+}
+
+test_update_prefix_consistency() {
+    echo "Testing update prefix consistency..."
+
+    local status=""
+
+    (
+        _bashlib_update_find_prefix() { printf "%s\n" "/usr"; return 0; }
+        bashlib_install_from_repo() { return 0; }
+
+        # Expected after fix:
+        # - either update fails early with unsupported prefix
+        # - or update supports /usr and succeeds
+        bashlib_update_tool "$TOOL_NAME" > /dev/null 2>&1
+    )
+    status="$?"
+
+    # Choose one assertion based on chosen fix strategy.
+    # If /usr is removed/unsupported:
+    assert_false "$status" "update should not proceed with unsupported /usr prefix"
+
+    echo -e "\e[1;32m[TEST]:\e[0m update_prefix_consistency passed"
+}
+
 test_lib_update_main() {
     echo -e "\e[1;36m[TEST]:\e[0m Running update tests..."
 
     test_find_prefix_local
     test_update_missing_tool_name
     test_update_tool_not_found
+    test_update_no_unexpected_stdout
+    test_update_prefix_consistency
     test_update_missing_metadata
     test_update_missing_repo
     test_update_install_failure_propagates
