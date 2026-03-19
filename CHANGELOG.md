@@ -1,4 +1,18 @@
 # Changelog
+## 03/18/2026
+author: Jachin Minyard
+
+## Bug fixes
+went through the project identified various simple bugs and fixed them.
+1. Bad global directories `usr/` not `/usr/local`
+2. Extra stdout put in update. (dont know if we should hide git clone output)
+3. `rm` command failure's not effecting the rc of the function
+4. Upodate could end up with the wrong install prefix.
+
+Some of these fixes required other changes like now all logging functions are directed to `stdout`
+This avoids them being captured in functions that grab stdout.
+
+Tests were put in place for each of the bugs above and running `cd test && ./test_all.bash` passed.
 
 ## 03/17/2026
 author: Jachin Minyard
