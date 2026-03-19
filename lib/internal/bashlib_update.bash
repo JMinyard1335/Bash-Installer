@@ -69,14 +69,13 @@ bashlib_update_tool() {
 
 	installer_log "Found "
 	installer_path "$tool_name"
-	printf " in "
+	printf " in " >&2
 	installer_path "$install_prefix"
-	printf "\n"
+	printf "\n" >&2
 
 	installer_log "Updating from "
 	installer_path "$repo"
-	printf "\n"
-	echo "$install_prefix"
+	printf "\n" >&2
 	bashlib_install_from_repo "$repo" "$install_prefix" 0 || return 1
 
 	installer_ok "$tool_name updated successfully."

@@ -16,17 +16,17 @@ installer_reset="\e[0m"
 
 # Prints a normal message with a cyan installer tag. (no newline)
 installer_log() {
-    printf "${installer_cyan}[Installer]:${installer_reset} %s" "$*"
+    printf "${installer_cyan}[Installer]:${installer_reset} %s" "$*" >&2
 }
 
 # Prints a normal message with a cyan installer tag.
 installer_logln() {
-    printf "${installer_cyan}[Installer]:${installer_reset} %s\n" "$*"
+    printf "${installer_cyan}[Installer]:${installer_reset} %s\n" "$*" >&2
 }
 
 # Prints a magenta path, useful with installer_log
 installer_path() {
-    printf "${installer_magenta}%s${installer_reset}" "$*"
+    printf "${installer_magenta}%s${installer_reset}" "$*" >&2
 }
 
 # Prints an error message with a red installer tag.
@@ -36,10 +36,10 @@ installer_error() {
 
 # Prints a success message with a green installer tag.
 installer_ok() {
-    printf "${installer_green}[Ok]:${installer_reset} %s\n" "$*"
+    printf "${installer_green}[Ok]:${installer_reset} %s\n" "$*" >&2
 }
 
 # Prints a warning message with a yellow installer tag.
 installer_warn() {
-    printf "${installer_yellow}[Warn]:${installer_reset} %s\n" "$*"
+    printf "${installer_yellow}[Warn]:${installer_reset} %s\n" "$*" >&2
 }
