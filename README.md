@@ -1,11 +1,11 @@
 # BashLib Installer
 
-Now part of my bashlib tool chain this tool makes up one of the core features (Install, Remove, Update) of custom bash scripts to your system.
-The aim was to make it easy to create bash project that could reuse code and install it like a dependency if it wasnt located on the system.
-I had grown tired of not having a better way to write bash programs other than copy paste and reuse code that way. which is in a way what this is
-but in a more orgnizied way.
+Now part of my bashlib toolchain, this tool makes up one of the core features (Install, Remove, Update) for getting custom bash scripts onto your system.
+The aim was to make it easy to create bash projects that could reuse code and install it like a dependency if it wasn't located on the system.
+I had grown tired of not having a better way to write bash programs other than copy-paste and reuse code that way, which is in a way what this is,
+but in a more organized way.
 
-This tool is built to be a stand alone tool and must require no other tools in the bashlib toolchain to install. 
+This tool is built to be a standalone tool and should require no other tools in the bashlib toolchain to install.
 This is a personal project and is probably not suited for secure development environments. 
 The installer can add tools to one of two paths:
 
@@ -23,11 +23,11 @@ $HOME/.local/libexec
 
 **MAKE SURE THESE ARE ON PATH IF NOT ALREADY**
 
-If installing or running any command globally you need access to root on your system usually through `sudo`.
+If installing or running any command globally, you need access to root on your system, usually through `sudo`.
 
-## BAP's (bash packages)
+## BAPs (bash packages)
 
-Im just going to call the `bap's` for now or bash packages. A bap requires a `tool.toml` file. 
+I'm just going to call them `baps` for now, or bash packages. A bap requires a `tool.toml` file.
 I know, I know, another configuration file, but it's a simple way to handle metadata. I chose TOML because
 it is easy to read and understand. 
 An example file would be:
@@ -48,6 +48,46 @@ All dependencies must also have a `tool.toml` file, as that is how this tool wor
 downloading dependencies, they will be installed with the
 `installer install --repo <link>` command.
 
+### Project structure
+
+Currently, all packages need to follow a project structure as follows:
+
+```
+project/
+	project		# script or executable
+	tool.toml	# metadata file
+	lib/		# place for additional files and libraries
+		<tool>.bash
+		internal/
+	libexec/	# place for additional subcommands
+
+```
+
+The layout is pretty straightforward. In the project's root dir, you have the `tool.toml` file as described above.
+You also have the CLI entry point, or the `project`. This is the script that will be placed in `bin` and can be
+called directly from the terminal. `installer install .`, so here the project is `installer`.
+You then have directories that hold additional scripts and commands as needed.
+
+#### Lib
+
+This should hold a few things: a script called `<namespace>_<tool>.bash`, so for this tool `bashlib_installer.bash`.
+This is the file that developers can source to gain access to the tool's underlying API, and a directory that holds those libraries,
+which I have just been calling `internal`.
+
+#### Libexec
+
+This should mainly just hold sub-commands for the main tool. For example, this tool has 3 sub-commands.
+
+``` bash
+installer install
+installer remove
+installer update
+```
+
+The sub-commands `install, remove, update` all handle their own arguments and parsing. This means that `installer` can just check
+which command you want and pass all the work off to the command. I'm sure this makes the tool slightly slower, mainly when called in other scripts, but
+it's not that noticeable on the command line.
+
 ## Installer CLI.
 
 The following is a list of commands and some examples of usage. The installer itself is simply
@@ -62,17 +102,8 @@ installer update --help
 
 ### Install
 
-Used to install a project to a path, either locally or globally. To install something globally you need access to root 
-aka `sudo`. To use it on your own project, you must lay out the project as follows:
-
-```
-project/
-	project		# script or executable
-	tool.toml	# metadata file
-	lib/		# place for additional files and libraries
-	libexec/	# place for additional subcommands
-
-```
+Used to install a project to a path, either locally or globally. To install something globally, you need access to root,
+aka `sudo`.
 
 Usage:
 
@@ -241,7 +272,7 @@ else
 	exit 1
 fi
 ```
-While you could just call something like `installer install $var` in your script it is faster to source.
+While you could just call something like `installer install $var` in your script, it is faster to source.
 Sourcing the project will give you access to the following API in your code.
 
 ```bash
@@ -284,7 +315,7 @@ cd <project-dir>/test
 ./test_all.bash
 ```
 
-This is a fail-first testing suite. If any test goes wrong along the way, it errors so you can fix the issue before running again.
+This is a fail-first testing suite. If any test goes wrong along the way, it errors out so you can fix the issue before running again.
 This is just my preferred way to test scripts like this. Code a little, test a little, fix the error, and move on.
 When writing tests, if you are a contributor, there is a file `test_asserts.bash` which gives you access to a lot
 of simple wrappers for tests that print a message on error and quit. Stick to using these, even if you wrap them.
