@@ -49,7 +49,7 @@ source "$LIB_DIR/internal/bashlib_remove.bash"
 source "$LIB_DIR/internal/bashlib_update.bash"
 source "$LIB_DIR/internal/bashlib_create.bash"
 source "$LIB_DIR/internal/installer_format.bash"
-source "$LIB_DIR/internal/bashlib_create.bash"
+
 
 # ----------------------------------------------------------------------------------------
 
