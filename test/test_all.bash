@@ -17,11 +17,17 @@ run_update_tests() {
 	test_lib_update_main
 }
 
+run_CLI_install_tests() {
+    source "$SCRIPT_DIR/test_cli_install.bash"
+    test_cli_install_main
+}
+
 test_all_main() {
 	echo -e "\e[1;36m[TEST]:\e[0m Running all tests..."
 	run_install_tests
 	run_remove_tests
 	run_update_tests
+	run_CLI_install_tests
 	echo -e "\e[1;32m[TEST]:\e[0m All tests passed!!!"
 }
 
