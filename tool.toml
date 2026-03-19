@@ -2,7 +2,7 @@
 project="bashlib-installer"
 author="Jachin Minyard"
 tool="installer"
-repo="https://github.com/JMinyard1335/Bash-Installer"
+repo="https://github.com/JMinyard1335/bashlib-installer"
 
 [directories]
 lib="lib"
