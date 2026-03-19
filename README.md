@@ -25,12 +25,14 @@ $HOME/.local/libexec
 
 If installing or running any command globally, you need access to root on your system, usually through `sudo`.
 
+
 ## BAPs (bash packages)
 
 I'm just going to call them `baps` for now, or bash packages. A bap requires a `tool.toml` file.
 I know, I know, another configuration file, but it's a simple way to handle metadata. I chose TOML because
-it is easy to read and understand. 
-An example file would be:
+it is easy to read and understand. To create a new bash package run `installer create`
+
+An example tool.toml file would be:
 
 ```toml
 [project]
@@ -88,6 +90,7 @@ The sub-commands `install, remove, update` all handle their own arguments and pa
 which command you want and pass all the work off to the command. I'm sure this makes the tool slightly slower, mainly when called in other scripts, but
 it's not that noticeable on the command line.
 
+
 ## Installer CLI.
 
 The following is a list of commands and some examples of usage. The installer itself is simply
@@ -98,6 +101,7 @@ installer help
 installer install --help
 installer remove --help
 installer update --help
+installer create --help
 ```
 
 ### Install
@@ -153,6 +157,18 @@ Examples:
 ```bash
 installer update installer
 ```
+
+### Create
+
+Used to create a new bash package following the correct structured layout and 
+applying the metadata to the tool.toml file. 
+
+``` bash
+installer create
+```
+
+follow the interactive prompt to create the new project.
+
 
 ## Installing the Installer...lol
 
