@@ -86,24 +86,6 @@ Example:
 installer update installer
 ```
 
-### `installer create`
-
-Create a new Bash package scaffold from an interactive prompt.
-
-Usage:
-
-```bash
-installer create
-```
-
-It generates:
-
-- `<project>/tool.toml`
-- `<project>/<tool>`
-- `<project>/lib/<tool>.bash`
-- `<project>/lib/internal/`
-- `<project>/libexec/`
-- `<project>/man/`
 
 ## Sourceable API
 
