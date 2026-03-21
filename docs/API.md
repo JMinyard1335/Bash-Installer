@@ -1,69 +1,175 @@
-# API reference sheet
+# API Reference
 
-## Installer CLI.
+This file documents only the CLI and sourceable library API for `bashlib-installer`.
 
-The following is a list of commands and some examples of usage. The installer itself is simply
-a dispatcher similar to other tools like git. Here's how to get started:
+## CLI
+
+`installer` is a dispatcher command:
+
+```bash
+installer <command> [args]
+```
+
+Available commands:
 
 ```bash
 installer help
 installer install --help
 installer remove --help
 installer update --help
+installer create --help
 ```
 
-### Install
+### `installer install`
 
-Used to install a project to a path, either locally or globally. To install something globally, you need access to root,
-aka `sudo`.
+Install a project from a local path or from a repository URL.
 
 Usage:
 
 ```bash
-installer install [opts] <path-to-tool>
+installer install [options] <path>
 ```
+
+Options:
+
+- `-g`, `--global`: install to `/usr/local` instead of `$HOME/.local`.
+- `--repo`: treat `<path>` as a repo URL and install from a clone.
+- `--help`: print command help.
 
 Examples:
 
 ```bash
-installer install --help                        # print help info
-installer install $HOME/Projects/my-project     # local install
-installer install --global ./Myproject          # global install
+installer install ./my-tool
+installer install --global ./my-tool
+installer install --repo "https://github.com/user/my-tool.git"
+installer install --global --repo "https://github.com/user/my-tool.git"
 ```
 
-### Remove
+### `installer remove`
 
-Used to remove the given tool from the path.
+Remove an installed tool by name.
 
 Usage:
 
 ```bash
-installer remove [opts] <tool name>
+installer remove <project-name>
 ```
+
+Options:
+
+- `--help`: print command help.
 
 Examples:
 
 ```bash
-installer remove --help
+installer remove installer
 installer remove my-tool
 ```
 
-### Update
+### `installer update`
 
-Uses the tool's metadata file `tool.toml` to clone the repo and install an update
-from the upstream tool. It will clone the tool into a temporary directory and then run the
-installer on it.
+Update an installed tool using the `repo` value from its installed `tool.toml`.
 
 Usage:
 
 ```bash
-installer update [opts] <tool name>
+installer update <tool-name>
 ```
 
-Examples:
+Options:
+
+- `--help`: print command help.
+
+Example:
 
 ```bash
 installer update installer
 ```
 
+### `installer create`
 
+Create a new Bash package scaffold from an interactive prompt.
+
+Usage:
+
+```bash
+installer create
+```
+
+It generates:
+
+- `<project>/tool.toml`
+- `<project>/<tool>`
+- `<project>/lib/<tool>.bash`
+- `<project>/lib/internal/`
+- `<project>/libexec/`
+- `<project>/man/`
+
+## Sourceable API
+
+After installation, source the library from one of these paths:
+
+```bash
+if [[ -f "${HOME}/.local/lib/installer/bashlib_installer.bash" ]]; then
+	source "${HOME}/.local/lib/installer/bashlib_installer.bash"
+elif [[ -f "/usr/local/lib/installer/bashlib_installer.bash" ]]; then
+	source "/usr/local/lib/installer/bashlib_installer.bash"
+else
+	echo "installer library not found" >&2
+	exit 1
+fi
+```
+
+### Exported functions
+
+`bashlib_install_from_source <source_dir> <install_prefix> [debug_level]`
+
+- Installs from a local project directory.
+- `install_prefix` must be `$HOME/.local` or `/usr/local`.
+
+`bashlib_install_from_repo <repo_url> <install_prefix> [debug_level]`
+
+- Clones repo to a temporary directory, then installs it.
+
+`bashlib_install_dependencies <source_dir> <install_prefix> [debug_level]`
+
+- Reads `[dependencies]` from `tool.toml` and installs missing deps.
+
+`bashlib_update_tool <tool_name>`
+
+- Finds installed tool metadata and updates from configured repo.
+
+`bashlib_remove_tool <tool_name>`
+
+- Removes installed files/directories for the tool from standard locations.
+
+### API usage examples
+
+Local source install:
+
+```bash
+bashlib_install_from_source "./my-tool" "$HOME/.local" 0
+```
+
+Repo install:
+
+```bash
+bashlib_install_from_repo "https://github.com/user/my-tool.git" "$HOME/.local" 0
+```
+
+Update and remove:
+
+```bash
+bashlib_update_tool "my-tool"
+bashlib_remove_tool "my-tool"
+```
+
+### Expected project shape for installs
+
+```text
+project/
+  <tool>
+  tool.toml
+  lib/
+  libexec/
+```
