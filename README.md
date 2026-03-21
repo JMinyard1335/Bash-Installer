@@ -38,7 +38,7 @@ For global install:
 sudo ./installer install --global .
 ```
 
-For full install instructions, see [Install.md](INSTALL.md).
+For full install instructions, see [Install.md](docs/INSTALL.md).
 
 
 ## Commands
