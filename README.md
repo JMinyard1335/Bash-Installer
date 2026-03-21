@@ -78,12 +78,9 @@ Global install needs root/sudo.
 
 I call them `baps` for now. A bap requires a `tool.toml` file.
 Yes, another config file, but TOML keeps metadata readable and simple.
-
-Create a new package scaffold with:
-
-```bash
-installer create
-```
+Create a new package template consider my other project: \
+\
+[bashlib-create](https:github.com/JMinyard1335/bashlib-create)
 
 An example tool.toml file would be:
 
