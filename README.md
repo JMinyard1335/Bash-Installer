@@ -1,13 +1,60 @@
 # BashLib Installer
 
-Now part of my bashlib toolchain, this tool makes up one of the core features (Install, Remove, Update) for getting custom bash scripts onto your system.
-The aim was to make it easy to create bash projects that could reuse code and install it like a dependency if it wasn't located on the system.
-I had grown tired of not having a better way to write bash programs other than copy-paste and reuse code that way, which is in a way what this is,
-but in a more organized way.
+Part of my bashlib toolchain, this handles core package actions for Bash projects:
 
-This tool is built to be a standalone tool and should require no other tools in the bashlib toolchain to install.
-This is a personal project and is probably not suited for secure development environments. 
-The installer can add tools to one of two paths:
+- install
+- remove
+- update
+- create scaffold
+
+The goal is simple: stop copy-pasting scripts between repos and make Bash projects reusable.
+
+This tool is standalone and does not require other bashlib tools to install.
+
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Commands](#commands)
+- [Install Paths](#install-paths)
+- [BAPs (bash packages)](#baps-bash-packages)
+- [Project Layout](#project-layout)
+- [Docs](#docs)
+- [Testing](#testing)
+- [Contributing](#contributing)
+
+## Quick Start
+
+```bash
+git clone "https://github.com/JMinyard1335/bashlib-installer.git"
+cd bashlib-installer
+chmod +x ./installer
+./installer help
+./installer install .
+```
+
+For global install:
+
+```bash
+sudo ./installer install --global .
+```
+
+For full install instructions, see [Install.md](INSTALL.md).
+
+## Commands
+
+```bash
+installer help
+installer install --help
+installer remove --help
+installer update --help
+installer create --help
+```
+
+For complete CLI usage and sourceable API docs, see [API.md](API.md).
+
+## Install Paths
+
+The installer uses one of two target prefixes:
 
 ```bash
 # Global (system-wide)
@@ -21,320 +68,68 @@ $HOME/.local/lib
 $HOME/.local/libexec
 ```
 
-**MAKE SURE THESE ARE ON PATH IF NOT ALREADY**
+Make sure the matching `bin` path is on your `PATH`.
 
-If installing or running any command globally, you need access to root on your system, usually through `sudo`.
+Global install needs root/sudo.
 
 
 ## BAPs (bash packages)
 
-I'm just going to call them `baps` for now, or bash packages. A bap requires a `tool.toml` file.
-I know, I know, another configuration file, but it's a simple way to handle metadata. I chose TOML because
-it is easy to read and understand. To create a new bash package run `installer create`
+I call them `baps` for now. A bap requires a `tool.toml` file.
+Yes, another config file, but TOML keeps metadata readable and simple.
+
+Create a new package scaffold with:
+
+```bash
+installer create
+```
 
 An example tool.toml file would be:
 
 ```toml
 [project]
 tool="myproject"
-repo="path/to/repo"
+repo="https://github.com/you/myproject"
 
 [dependencies]
-other-project="path/to/other-project/repo"
+other-project="https://github.com/you/other-project"
 
 ```
 
-You can add additional metadata if you want, but it is not currently used by the installer.
+Dependencies should also have a `tool.toml` so they can be installed and updated correctly.
 
-All dependencies must also have a `tool.toml` file, as that is how this tool works. When
-downloading dependencies, they will be installed with the
-`installer install --repo <link>` command.
+## Project Layout
 
-### Project structure
+Expected structure:
 
-Currently, all packages need to follow a project structure as follows:
-
-```
+```text
 project/
-	project		# script or executable
-	tool.toml	# metadata file
-	lib/		# place for additional files and libraries
-		<tool>.bash
-		internal/
-	libexec/	# place for additional subcommands
-
+  <tool>            # script or executable
+  tool.toml         # metadata file
+  lib/              # sourceable library files
+    <tool>.bash
+    internal/
+  libexec/          # subcommand executables
 ```
 
-The layout is pretty straightforward. In the project's root dir, you have the `tool.toml` file as described above.
-You also have the CLI entry point, or the `project`. This is the script that will be placed in `bin` and can be
-called directly from the terminal. `installer install .`, so here the project is `installer`.
-You then have directories that hold additional scripts and commands as needed.
-
-#### Lib
-
-This should hold a few things: a script called `<namespace>_<tool>.bash`, so for this tool `bashlib_installer.bash`.
-This is the file that developers can source to gain access to the tool's underlying API, and a directory that holds those libraries,
-which I have just been calling `internal`.
-
-#### Libexec
-
-This should mainly just hold sub-commands for the main tool. For example, this tool has 3 sub-commands.
-
-``` bash
-installer install
-installer remove
-installer update
-```
-
-The sub-commands `install, remove, update` all handle their own arguments and parsing. This means that `installer` can just check
-which command you want and pass all the work off to the command. I'm sure this makes the tool slightly slower, mainly when called in other scripts, but
-it's not that noticeable on the command line.
-
-
-## Installer CLI.
-
-The following is a list of commands and some examples of usage. The installer itself is simply
-a dispatcher similar to other tools like git. Here's how to get started:
-
-```bash
-installer help
-installer install --help
-installer remove --help
-installer update --help
-installer create --help
-```
-
-### Install
-
-Used to install a project to a path, either locally or globally. To install something globally, you need access to root,
-aka `sudo`.
-
-Usage:
-
-```bash
-installer install [opts] <path-to-tool>
-```
-
-Examples:
-
-```bash
-installer install --help                        # print help info
-installer install $HOME/Projects/my-project     # local install
-installer install --global ./Myproject          # global install
-```
-
-### Remove
-
-Used to remove the given tool from the path.
-
-Usage:
-
-```bash
-installer remove [opts] <tool name>
-```
-
-Examples:
-
-```bash
-installer remove --help
-installer remove my-tool
-```
-
-### Update
-
-Uses the tool's metadata file `tool.toml` to clone the repo and install an update
-from the upstream tool. It will clone the tool into a temporary directory and then run the
-installer on it.
-
-Usage:
-
-```bash
-installer update [opts] <tool name>
-```
-
-Examples:
-
-```bash
-installer update installer
-```
-
-### Create
-
-Used to create a new bash package following the correct structured layout and 
-applying the metadata to the tool.toml file. 
-
-``` bash
-installer create
-```
-
-follow the interactive prompt to create the new project.
-
-
-## Installing the Installer...lol
-
-To install this project, we will use the project itself. Start by cloning the repo with the
-following command:
-
-```bash
-git clone https://github.com/JMinyard1335/Bash-Installer.git installer
-```
-
-Then move into the new installer directory and grant the installer the correct permissions:
-
-```bash
-cd installer
-chmod +x installer
-```
-
-Finally, install it with itself:
-
-```bash
-./installer install .
-```
-
-Use the `--global` flag if you want to install it globally on the system (this requires root).
-
-All commands:
-
-```bash
-git clone https://github.com/JMinyard1335/Bash-Installer.git installer
-cd installer
-chmod +x installer
-installer install .
-```
-
-## Using the installer in other projects
-
-When creating a tool script, I usually end up with an API along the lines of the following:
-
-```bash
-<tool> <function> [opts] <args>
-```
-
-So it makes sense to allow the tool to do something like:
-
-```bash
-<tool> install
-<tool> update
-<tool> remove
-```
-
-### Installing the installer from your script
-
-You can install the installer locally without much trouble most of the time.
-To that end, add the following code somewhere in your script when `tool install` is called.
-
-```bash
-# if the tool is not installed globally or locally
-local which_installer=$(which installer)
-if [[ -z "$which_installer" ]]; then
-    printf "installer needed for project install now (y/N): "
-    read -r answer
-
-	# if the answer is not yes, exit.
-    if [[ ! "$answer" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-        echo "installer not installed. exiting."
-        exit 1
-    fi
-
-	# create a temp dir
-	local temp_dir=""
-	temp_dir="$(mktemp -d)" || {
-		error "Failed to create temporary directory"
-		exit 1
-	}
-
-	# attempt to clone
-	git clone "$installer_repo" "$temp_dir" || {
-		error "Failed to clone installer repository"
-		rm -rf -- "$temp_dir"
-		exit 1
-	}
-
-	# attempt to install installer
-	"$temp_dir/installer" install "$temp_dir" || {
-		error "Failed to install installer"
-		rm -rf -- "$temp_dir"
-		exit 1
-	}
-
-	# clean up the temp dir
-	rm -rf -- "$temp_dir"
-
-	# make sure install worked
-	which_installer="$(command -v installer)"
-	[[ -z "$which_installer" ]] && {
-		error "Installer still not found after installation"
-		exit 1
-	}
-fi
-```
-
-Yes, this is quite the long script, but toss it in a function or its own file and source it. Easy.
-The code above simply tells the user the installer is required and asks if they want to install it.
-If they answer no, the program exits. If not, the installer is installed and you are good to go.
-
-### Sourcing the Installer Lib (Best way to use in scripts)
-
-If the installer is installed, you can easily source it with the following:
-
-```bash
-if [[ -f "${HOME}/.local/lib/installer/bashlib_installer.bash" ]]; then
-    source "${HOME}/.local/lib/installer/bashlib_installer.bash"
-elif [[ -f "/usr/local/lib/installer/bashlib_installer.bash" ]]; then
-    source "/usr/local/lib/installer/bashlib_installer.bash"
-else
-    echo "couldn't source the installer."
-	exit 1
-fi
-```
-While you could just call something like `installer install $var` in your script, it is faster to source.
-Sourcing the project will give you access to the following API in your code.
-
-```bash
-bashlib_install_dependencies <path-to-source-dir> <install-path> <debug-level>
-bashlib_install_from_repo <url-to-repo> <install-path> <debug-level>
-bashlib_install_from_source <path-to-source-dir> <install-path> <debug-level>
-bashlib_update_tool <tool-name>
-bashlib_remove_tool <tool-name>
-```
-
-`bashlib_install_dependencies` is not really used in most of my scripts as it is called by `bashlib_install_from_source` which is called by everything but `bashlib_remove_tool`.
-
-## Contributing
-
-If you want to contribute, feel free to report bugs or other issues you find. For security-related concerns,
-please contact me through email so I can fix the issue and release a patch. If you feel generous and want to
-add new features or fix bugs yourself, feel free to make a pull request. Please keep to the current coding
-style where you can. This includes file conventions.
-
-- scripts that you run have no extension
-- scripts you source are `*.bash`
-
-We could use `.sh`, but since a lot of bash is used, let's just call them `.bash`.
-Code you write for the libraries should be tested and have tests in `test/`.
-These tests should make sure that:
-
-- input is validated
-- all error handling works
-- proper execution of the happy path
-
-For certain things like testing cloning, that seems a bit much. As long as other tests are in place, it is good.
-This is simply a way to test future changes against defined behaviors.
+## Docs
+
+- `INSTALL.md`: install this tool to your system.
+- `API.md`: CLI reference + sourceable Bash API.
+- `CONTRIBUTING.md`: contribution workflow, coding style, and PR expectations.
 
 ## Testing
 
-To run the tests for the project, simply:
+Run the full suite:
 
 ```bash
-cd <project-dir>/test
-./test_all.bash
+./test/test_all.bash
 ```
 
-This is a fail-first testing suite. If any test goes wrong along the way, it errors out so you can fix the issue before running again.
-This is just my preferred way to test scripts like this. Code a little, test a little, fix the error, and move on.
-When writing tests, if you are a contributor, there is a file `test_asserts.bash` which gives you access to a lot
-of simple wrappers for tests that print a message on error and quit. Stick to using these, even if you wrap them.
-If you find they are not enough, consider adding what you need to `test_asserts.bash`. Just make sure you follow
-the naming convention and that the file exits on failure and returns 0 on success.
+The tests are fail-first and stop at the first failure.
+
+## Contributing
+
+If you want to contribute, check [CONTRIBUTING.md](CONTRIBUTING.md) for setup, guidelines, and checklist.
+
 
