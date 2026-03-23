@@ -5,7 +5,6 @@ Part of my bashlib toolchain, this handles core package actions for Bash project
 - install
 - remove
 - update
-- create scaffold
 
 The goal is simple: stop copy-pasting scripts between repos and make Bash projects reusable.
 
@@ -38,7 +37,8 @@ For global install:
 sudo ./installer install --global .
 ```
 
-For full install instructions, see [Install.md](INSTALL.md).
+For full install instructions, see [Install.md](docs/INSTALL.md).
+
 
 ## Commands
 
@@ -50,7 +50,7 @@ installer update --help
 installer create --help
 ```
 
-For complete CLI usage and sourceable API docs, see [API.md](API.md).
+For complete CLI usage and sourceable API docs, see [API.md](docs/API.md).
 
 ## Install Paths
 
@@ -77,12 +77,9 @@ Global install needs root/sudo.
 
 I call them `baps` for now. A bap requires a `tool.toml` file.
 Yes, another config file, but TOML keeps metadata readable and simple.
-
-Create a new package scaffold with:
-
-```bash
-installer create
-```
+Create a new package template consider my other project: \
+\
+[bashlib-create](https:github.com/JMinyard1335/bashlib-create)
 
 An example tool.toml file would be:
 
@@ -112,11 +109,24 @@ project/
   libexec/          # subcommand executables
 ```
 
+To help create the project structure and other script templates checkout [bashlib-create](https://github.com/JMinyard1335/bashlib-create)
+
+If you are new to linux or what these folders are for then here's a quick explanation as I understand it.
+
+- lib: holds files that should be sourced.
+- libexec: holds subcommands or files that get executed.
+- bin: Main executable and programs you run.
+
+I didn't choose to include a bin and the root folder just holds the main executable aka the tool.
+
+
 ## Docs
+
 
 - `INSTALL.md`: install this tool to your system.
 - `API.md`: CLI reference + sourceable Bash API.
 - `CONTRIBUTING.md`: contribution workflow, coding style, and PR expectations.
+
 
 ## Testing
 
