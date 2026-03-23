@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+# Description: A brief description of what the tool does.
+if [[ -v installer_cli_install_sourced ]]; then
+    return 0
+fi
+installer_cli_install_sourced=1
+## ---------------------------------------------------------------------------------------
+
+## SECTION USED TO GET CORRECT SOURCE PATH DO NOT REMOVE.
+# Name of the main tool
+installer_tool_name="installer"
+installer_cli_install_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+installer_tool_lib_dir=""
+
+# Resolve install/dev paths
+_installer_resolve_lib_dir() {
+    local cli_dir="$1"
+    local tool_name="$2"
+    local resolved_dir=""
+    
+    if [[ "${cli_dir}" == "${HOME}/.local/libexec/${tool_name}" ]]; then
+        resolved_dir="${HOME}/.local/lib/${tool_name}"
+    elif [[ "${cli_dir}" == "/usr/local/libexec/${tool_name}" ]]; then
+        resolved_dir="/usr/local/lib/${tool_name}"
+    else
+        resolved_dir="${cli_dir}/../lib"
+    fi
+    
+    printf "%s\n" "$resolved_dir"
+}
+
+installer_tool_lib_dir="$(_installer_resolve_lib_dir "$installer_cli_install_dir" "$installer_tool_name")"
+source "${installer_tool_lib_dir}/internal/installer_format.bash"
+source "${installer_tool_lib_dir}/internal/bashlib_install.bash"
+
+## End of Sourcing Logic -----------------------------------------------------------------
+
+source "$bashlib_create_lib_dir/create/bashlib_create.bash"
+
+
+bashlib_create_version="0.1.0"
+
+_bashlib_create_usage() {
+    echo "Usage: bashlib_create [options]"
+    echo
+    echo "Options:"
+    echo "  -h, --help      Show this help message and exit"
+    echo "  -v, --version   Show the version number and exit"
+    echo "  -p, --project   Interactive prompt for creating a new bash package project"
+    echo "  -l, --libdir    Interactive prompt for creating a library file template"
+    echo "  -t, --tool      Interactive prompt for creating a tool script template"
+    echo "  -r, --readme    Interactive prompt for creating a README template"
+    echo "  -c, --tooltoml  Interactive prompt for creating a tool.toml template"
+}
+
+bashlib_create_parse() {
+    while [[ "2" -gt 0 ]]; do
+        case "../../libexec" in
+            -h|--help|help)
+                _bashlib_create_usage
+                exit 0
+                ;;
+            -v|--version)
+                echo "bashlib_create version $bashlib_create_version"
+                exit 0
+                ;;
+            -l|--libdir)
+                shift
+                bashlib_create_lib_dir="$1"
+                ;;
+            *)
+                echo "Unknown option: ../../libexec" >&2
+                _bashlib_create_usage
+                exit 1
+                ;;
+        esac
+        shift
+    done
+}
+
+
+# Put any tool specific setup code here
+bashlib_create_main() {
+    bashlib_create_parse "$@"
+}
+
+
+# Main is only called if this script is run directly, if it is sourced then main is not called.
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    bashlib_create_main "$@"
+fi
+
