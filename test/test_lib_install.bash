@@ -19,6 +19,7 @@ setup_test_env() {
 
     mkdir -p "$SRC_ROOT/lib"
     mkdir -p "$SRC_ROOT/libexec"
+    mkdir -p "$SRC_ROOT/man/man1"
 
     cat > "$SRC_ROOT/tool.toml" <<EOF
 [project]
@@ -41,6 +42,12 @@ EOF
 echo "hello from libexec"
 EOF
 
+    cat > "$SRC_ROOT/man/man1/mytool.1" <<'EOF'
+.TH MYTOOL 1
+.SH NAME
+mytool \- test tool
+EOF
+
     chmod +x "$SRC_ROOT/mytool"
     chmod +x "$SRC_ROOT/lib/helper.bash"
     chmod +x "$SRC_ROOT/libexec/mytool-subcmd"
@@ -53,6 +60,7 @@ cleanup_test_env() {
     rm -f "$HOME/.local/bin/mytool"
     rm -rf "$HOME/.local/lib/mytool"
     rm -rf "$HOME/.local/libexec/mytool"
+    rm -f "$HOME/.local/share/man/man1/mytool.1"
 }
 
 # -----------------------------------------------------------------------------
@@ -112,6 +120,23 @@ test_move_to_libexec() {
     echo -e "\e[1;32m[TEST]:\e[0m move_to_libexec passed"
 }
 
+test_move_to_man() {
+    local status=""
+
+    echo "Testing move to man..."
+    cleanup_test_env
+    setup_test_env
+
+    _bashlib_move_to_man "$SRC_ROOT" "$HOME/.local" "mytool" 0 > /dev/null 2>&1
+    status="$?"
+
+    assert_true "$status" "move_to_man should succeed, got $status"
+    assert_installed_file "$HOME/.local/share/man/man1/mytool.1" "man page should be copied"
+
+    cleanup_test_env
+    echo -e "\e[1;32m[TEST]:\e[0m move_to_man passed"
+}
+
 test_move_to_bin() {
     local status=""
 
@@ -148,6 +173,7 @@ test_install_from_source() {
     assert_installed_file "$HOME/.local/lib/mytool/tool.toml" "installed tool metadata missing"
     assert_installed_dir "$HOME/.local/libexec/mytool" "installed libexec dir missing"
     assert_installed_file "$HOME/.local/libexec/mytool/mytool-subcmd" "installed libexec file missing"
+    assert_installed_file "$HOME/.local/share/man/man1/mytool.1" "installed man page missing"
 
     cleanup_test_env
     echo -e "\e[1;32m[TEST]:\e[0m install_from_source passed"
@@ -192,6 +218,7 @@ test_lib_install_main() {
 
     test_move_to_lib
     test_move_to_libexec
+    test_move_to_man
     test_move_to_bin
     test_install_bad_install_path
     test_install_from_source
@@ -203,4 +230,3 @@ test_lib_install_main() {
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
     test_lib_install_main "$@"
 fi
-

@@ -33,6 +33,11 @@ Finally, install it with itself:
 
 Use the `--global` flag if you want to install it globally on the system (this requires root).
 
+Projects can include optional man pages in a `man/` directory. Local installs copy
+those pages into `$HOME/.local/share/man`; global installs copy them into
+`/usr/local/share/man`. If local man pages do not appear in `man <tool>`, add the
+local man directory to `MANPATH`.
+
 All commands:
 
 ```bash
@@ -149,4 +154,3 @@ fi
 While you could just call something like `installer install $var` in your script, it is faster to source.
 Sourcing the project will give you access to the following API in your code.
 see [here](API.md) for the full API.
-

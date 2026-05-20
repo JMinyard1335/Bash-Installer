@@ -61,14 +61,18 @@ The installer uses one of two target prefixes:
 /usr/local/bin
 /usr/local/lib
 /usr/local/libexec
+/usr/local/share/man
 
 # Locally (your user only)
 $HOME/.local/bin
 $HOME/.local/lib
 $HOME/.local/libexec
+$HOME/.local/share/man
 ```
 
 Make sure the matching `bin` path is on your `PATH`.
+If you install local man pages, make sure `$HOME/.local/share/man` is on your
+`MANPATH`.
 
 Global install needs root/sudo.
 
@@ -107,6 +111,7 @@ project/
     <tool>.bash
     internal/
   libexec/          # subcommand executables
+  man/              # optional man pages, for example man/man1/<tool>.1
 ```
 
 To help create the project structure and other script templates checkout [bashlib-create](https://github.com/JMinyard1335/bashlib-create)
@@ -141,5 +146,4 @@ The tests are fail-first and stop at the first failure.
 ## Contributing
 
 If you want to contribute, check [CONTRIBUTING.md](CONTRIBUTING.md) for setup, guidelines, and checklist.
-
 

@@ -82,6 +82,7 @@ bashlib_install_from_source() {
     _bashlib_move_to_bin "$source_dir" "$install_dir" "$tool_name" "$debug" || status=1
     _bashlib_move_to_lib "$source_dir" "$install_dir" "$tool_name" "$debug" || status=1
     _bashlib_move_to_libexec "$source_dir" "$install_dir" "$tool_name" "$debug" || status=1
+    _bashlib_move_to_man "$source_dir" "$install_dir" "$tool_name" "$debug" || status=1
 
     return "$status"
 }
@@ -273,7 +274,7 @@ _bashlib_move_to_bin() {
     mkdir -p -- "$bin_path" || return 1
 
     if [[ -f "$tool_script_path" ]]; then
-        install -m 755 -t "$bin_path" -- "$tool_script_path" || return 1
+        install -m 755 -- "$tool_script_path" "${bin_path}/${tool_name}" || return 1
         return 0
     fi
 
@@ -356,8 +357,35 @@ _bashlib_move_to_libexec() {
 }
 
 _bashlib_move_to_man() {
-    echo -e "\e[1;33m[Warn]:\e[0m Not implemented man pages will not be installed with the project."
-    echo "     please see the projects github page for more info and updates."
+    local tool_path="" install_path="" tool_name="" debug=""
+    local dest=""
+
+    if [[ "$#" -lt 3 || "$#" -gt 4 ]]; then
+        echo "_bashlib_move_to_man: Invalid argument count." >&2
+        return 1
+    fi
+
+    tool_path="$1"
+    install_path="$2"
+    tool_name="$3"
+    debug="${4:-0}"
+
+    _bashlib_check_install_path "$install_path" || return 1
+
+    if [[ ! -d "$tool_path" ]]; then
+        echo "_bashlib_move_to_man: Unable to find tool source dir: $tool_path" >&2
+        return 1
+    fi
+
+    if [[ ! -d "${tool_path}/man" ]]; then
+        [[ "$debug" -ge 2 ]] && echo "[debug]: No man/ directory for ${tool_name}"
+        return 0
+    fi
+
+    dest="${install_path}/share/man"
+    mkdir -p -- "$dest" || return 1
+
+    cp -r -- "${tool_path}/man/." "$dest" || return 1
     return 0
 }
 ## END HELPER FUNCTIONS ------------------------------------------------------------------
